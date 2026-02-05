@@ -15,7 +15,7 @@ export default async function handler(req, res) {
         const buffer = await response.arrayBuffer();
 
         res.setHeader('Content-Type', 'image/jpeg');
-        res.setHeader('Access-Control-Allow-Origin', '*'); // ဒါမှ တခြား site က လှမ်းယူလို့ရမှာပါ
+        res.setHeader('Access-Control-Allow-Origin', '*'); 
         res.send(Buffer.from(buffer));
     } catch (e) {
         res.status(500).send("Error fetching image");
