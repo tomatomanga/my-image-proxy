@@ -1,25 +1,28 @@
 module.exports = async (req, res) => {
-  const { file_id } = req.query;
-  const botToken = "8417041767:AAGYDiMEzWjetOj_FfV5_c4x4WSxrWW2iD4"; // မင်း Bot Token
+    // query ကနေ 'url' ကို ယူမယ်
+    const { url } = req.query;
 
-  if (!file_id) return res.status(400).send("Missing file_id");
+    if (!url) {
+        return res.status(400).send("Missing image URL");
+    }
 
-  try {
-    const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${file_id}`);
-    const fileData = await fileRes.json();
+    try {
+        // Discord ဒါမှမဟုတ် တခြား URL ကို လှမ်းယူမယ်
+        const imageRes = await fetch(decodeURIComponent(url));
+        
+        if (!imageRes.ok) {
+            return res.status(imageRes.status).send("Failed to fetch image from source");
+        }
 
-    if (!fileData.ok) return res.status(404).send("File not found on Telegram");
+        const imageBuffer = await imageRes.arrayBuffer();
 
-    const filePath = fileData.result.file_path;
-    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+        // Header တွေကို သတ်မှတ်မယ် (CORS အရေးကြီးပါတယ်!)
+        res.setHeader("Content-Type", imageRes.headers.get("content-type") || "image/jpeg");
+        res.setHeader("Access-Control-Allow-Origin", "*"); // ဒါမှ Website ကနေ ခေါ်သုံးလို့ရမှာ
+        res.setHeader("Cache-Control", "public, max-age=31536000");
 
-    const imageRes = await fetch(fileUrl);
-    const imageBuffer = await imageRes.arrayBuffer();
-
-    res.setHeader("Content-Type", "image/jpeg");
-    res.setHeader("Cache-Control", "public, max-age=31536000");
-    res.send(Buffer.from(imageBuffer));
-  } catch (e) {
-    res.status(500).send("Error fetching image");
-  }
+        res.send(Buffer.from(imageBuffer));
+    } catch (e) {
+        res.status(500).send("Error fetching image: " + e.message);
+    }
 };
